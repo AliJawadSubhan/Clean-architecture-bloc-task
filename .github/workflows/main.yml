@@ -35,7 +35,7 @@ jobs:
         with:
           artifacts: "build/app/outputs/apk/release/*"
           tag: test-build.${{ github.run_number }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.TOKEN }}
 
       - name: Send Slack DM
         uses: act10ns/slack@v2
