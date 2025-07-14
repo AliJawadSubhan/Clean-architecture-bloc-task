@@ -1,0 +1,52 @@
+name: "Test Builds - Android & Slack DM"
+
+# Fixed trigger section - must be at root level
+on:
+  push:
+    branches:
+      - Test-builds
+  workflow_dispatch:  # Optional: Allows manual triggering
+
+jobs:
+  build:
+    name: Build and Notify
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+
+      - run: flutter pub get
+      - run: flutter build apk --release --split-per-abi
+
+      - name: Upload APK to Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/app/outputs/apk/release/*"
+          tag: test-build.${{ github.run_number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Slack DM
+        uses: act10ns/slack@v2
+        with:
+          channel: "U05SJ1DHZ39"  # Your direct Slack ID
+          status: ${{ job.status }}
+          text: |
+            🧪 Test Build Result
+            Branch: Test-builds
+            Version: test-build.${{ github.run_number }}
+            Status: ${{ job.status }}
+            Commit: ${{ github.sha }}
+          fields: repo,workflow
+        if: always()
